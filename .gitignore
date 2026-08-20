@@ -1,0 +1,8 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.env
+scratch_response.py
+scratch_script.py
+venv/
+.venv/
