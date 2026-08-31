@@ -43,6 +43,9 @@ class AnalyzeErrorResponse(BaseModel):
     model_name: str
     error: str
 
+class UnsupportedModelErrorResponse(BaseModel):
+    error: Literal["unsupported_model"]
+    detail: str
 
 class CompareResponse(BaseModel):
     results: dict[str, AnalyzeSuccessResponse | AnalyzeErrorResponse]

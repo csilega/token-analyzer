@@ -1,0 +1,28 @@
+.token-span {
+  display: inline-block;
+  padding: 1px 3px;
+  margin-right: 2px; /* visible gap between spans — a boundary cue independent of color */
+  border-radius: 3px;
+}
+.token-fragment { opacity: 0.55; }
+
+/* Validated categorical order, adjacent-pair colorblind-safe (light mode) */
+.token-slot-0 { background: #2a78d6; color: #0b0b0b; } /* blue */
+.token-slot-1 { background: #eb6834; color: #0b0b0b; } /* orange */
+.token-slot-2 { background: #1baf7a; color: #0b0b0b; } /* aqua */
+.token-slot-3 { background: #eda100; color: #0b0b0b; } /* yellow */
+.token-slot-4 { background: #e87ba4; color: #0b0b0b; } /* magenta */
+.token-slot-5 { background: #008300; color: #ffffff; } /* green */
+.token-slot-6 { background: #4a3aa7; color: #ffffff; } /* violet */
+.token-slot-7 { background: #e34948; color: #0b0b0b; } /* red */
+
+@media (prefers-color-scheme: dark) {
+  .token-slot-0 { background: #3987e5; color: #0b0b0b; }
+  .token-slot-1 { background: #d95926; color: #0b0b0b; }
+  .token-slot-2 { background: #199e70; color: #0b0b0b; }
+  .token-slot-3 { background: #c98500; color: #0b0b0b; }
+  .token-slot-4 { background: #d55181; color: #0b0b0b; }
+  .token-slot-5 { background: #008300; color: #ffffff; }
+  .token-slot-6 { background: #9085e9; color: #0b0b0b; }
+  .token-slot-7 { background: #e66767; color: #0b0b0b; }
+}

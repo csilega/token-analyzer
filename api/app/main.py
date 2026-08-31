@@ -13,6 +13,7 @@ import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -30,12 +31,21 @@ from .schemas import (
     CompareRequest,
     CompareResponse,
     TokenStringResponse,
+    UnsupportedModelErrorResponse
 )
 
 configure_logging()
 logger = logging.getLogger("token_analyzer.api")
 
+
 app = FastAPI(title="Token Analyzer API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- Rate limiting ---------------------------------------------------------
 # Keyed by IP address (get_remote_address) -- a known, accepted limitation:
@@ -96,7 +106,11 @@ def _to_success_response(result) -> AnalyzeSuccessResponse:
 
 
 # --- Routes ----------------------------------------------------------------
-@app.post("/analyze", response_model=AnalyzeSuccessResponse)
+@app.post(
+    "/analyze",
+    response_model=AnalyzeSuccessResponse,
+    responses={404: {"model": UnsupportedModelErrorResponse, "description": "Unsupported model"}},
+)
 @limiter.limit("10/minute")
 def analyze_endpoint(request: Request, body: AnalyzeRequest) -> AnalyzeSuccessResponse:
     # Plain `def`, not `async def`: analyze() is 100% CPU-bound (the
