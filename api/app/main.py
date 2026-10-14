@@ -20,8 +20,9 @@ from slowapi.util import get_remote_address
 
 from token_analyzer.analyzer import analyze, compare
 from token_analyzer.analyzer import AnalysisError as LibAnalysisError
-from token_analyzer.exceptions import UnsupportedModelError
+from token_analyzer.exceptions import TokenAnalyzerError, TokenizerLoadError, UnsupportedModelError
 
+from .config import settings
 from .context import request_id_var
 from .logging_config import configure_logging
 from .schemas import (
@@ -33,6 +34,12 @@ from .schemas import (
     TokenStringResponse,
     UnsupportedModelErrorResponse
 )
+
+from prometheus_client import make_asgi_app
+from token_analyzer.caching import InMemoryCacheBackend, analyze_cached  # swap for RedisCacheBackend when ready
+from api.app.health import router as health_router
+
+
 
 configure_logging()
 logger = logging.getLogger("token_analyzer.api")
@@ -46,6 +53,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+cache_backend = InMemoryCacheBackend()  # Ready to switch when needed: RedisCacheBackend(redis.Redis.from_url(settings.redis_url))
+
+app.include_router(health_router)
+app.mount("/metrics", make_asgi_app())  # prometheus_client's built-in exposition endpoint
+
 
 # --- Rate limiting ---------------------------------------------------------
 # Keyed by IP address (get_remote_address) -- a known, accepted limitation:
@@ -89,6 +102,18 @@ async def request_id_middleware(request: Request, call_next):
 async def unsupported_model_handler(request: Request, exc: UnsupportedModelError):
     return JSONResponse(status_code=404, content={"error": "unsupported_model", "detail": str(exc)})
 
+# Global fallback for any TokenAnalyzerError subclass without its own
+# dedicated handler (currently just TokenizerLoadError) — automatically
+# covers future subclasses too, with no code change needed here.
+# Applies app-wide by exception type, not by route; in practice it's
+# only ever reached via /analyze today, since compare()'s own per-model
+# isolation already catches TokenAnalyzerError before it gets this far.
+@app.exception_handler(TokenAnalyzerError)
+async def token_analyzer_error_handler(request: Request, exc: TokenAnalyzerError):
+    if isinstance(exc, TokenizerLoadError):
+        return JSONResponse(status_code=500, content={"error": "tokenizer_load_failed", "detail": str(exc)})
+    return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
+
 
 # --- Helpers -------------------------------------------------------------
 def _to_success_response(result) -> AnalyzeSuccessResponse:
@@ -111,7 +136,7 @@ def _to_success_response(result) -> AnalyzeSuccessResponse:
     response_model=AnalyzeSuccessResponse,
     responses={404: {"model": UnsupportedModelErrorResponse, "description": "Unsupported model"}},
 )
-@limiter.limit("10/minute")
+@limiter.limit(settings.rate_limit)
 def analyze_endpoint(request: Request, body: AnalyzeRequest) -> AnalyzeSuccessResponse:
     # Plain `def`, not `async def`: analyze() is 100% CPU-bound (the
     # tokenizer's one-time network fetch is already cached by
@@ -131,13 +156,13 @@ def analyze_endpoint(request: Request, body: AnalyzeRequest) -> AnalyzeSuccessRe
     # already guarantees body.text is a str before this line runs.
     # UnsupportedModelError is intentionally left to escape uncaught: the
     # global exception_handler above catches it and returns 404.
-    result = analyze(body.text, body.model)
+    result = analyze_cached(body.text, body.model, cache_backend, analyze_fn=analyze)
     logger.info(f"analyze succeeded: model={body.model} token_count={result.token_count}")
     return _to_success_response(result)
 
 
 @app.post("/compare", response_model=CompareResponse)
-@limiter.limit("10/minute")
+@limiter.limit(settings.rate_limit)
 def compare_endpoint(request: Request, body: CompareRequest) -> CompareResponse:
     # compare() never raises UnsupportedModelError itself -- it catches
     # per-model TokenAnalyzerError internally and stores an AnalysisError
