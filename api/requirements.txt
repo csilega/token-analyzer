@@ -1,0 +1,7 @@
+-e ../
+fastapi
+uvicorn[standard]
+slowapi
+redis
+prometheus_client
+pydantic_settings
