@@ -12,7 +12,7 @@ from tokenizers import Tokenizer
 from token_analyzer.adapters.base import TokenizerAdapter
 from token_analyzer.adapters.huggingface_adapter import HuggingFaceAdapter
 from token_analyzer.adapters.tiktoken_adapter import TiktokenAdapter
-from token_analyzer.exceptions import UnsupportedModelError
+from token_analyzer.exceptions import UnsupportedModelError, TokenizerLoadError
 
 # Models we know how to build a tiktoken-backed adapter for.
 # Extend this as support grows
@@ -39,22 +39,29 @@ SUPPORTED_MODELS = frozenset(_TIKTOKEN_MODELS | _HUGGINGFACE_MODELS.keys())
 def get_adapter(model_name: str) -> TokenizerAdapter:
     """
     Return a cached TokenizerAdapter for `model_name`.
-
-    The first call for a given model_name constructs the adapter (which
-    may involve loading/downloading merge tables or tokenizer files);
-    every subsequent call for that exact string returns the same cached
-    instance.
-
+    ...
     Raises:
         UnsupportedModelError: if model_name has no registered adapter.
+        TokenizerLoadError: if the adapter is registered but its backend
+            failed to load (e.g. a network failure fetching vocab/merge data).
     """
     if model_name in _TIKTOKEN_MODELS:
-        encoding = tiktoken.encoding_for_model(model_name)
+        try:
+            encoding = tiktoken.encoding_for_model(model_name)
+        except Exception as e:
+            raise TokenizerLoadError(
+                f"Failed to load tiktoken encoding for {model_name}: {e}"
+            ) from e
         return TiktokenAdapter(encoding)
 
     if model_name in _HUGGINGFACE_MODELS:
         repo_id = _HUGGINGFACE_MODELS[model_name]
-        tokenizer = Tokenizer.from_pretrained(repo_id)
+        try:
+            tokenizer = Tokenizer.from_pretrained(repo_id)
+        except Exception as e:
+            raise TokenizerLoadError(
+                f"Failed to load HuggingFace tokenizer for {model_name}: {e}"
+            ) from e
         return HuggingFaceAdapter(tokenizer)
 
     raise UnsupportedModelError(model_name)

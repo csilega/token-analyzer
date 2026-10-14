@@ -12,7 +12,7 @@ import pytest
 
 from token_analyzer.adapters.base import TokenizerAdapter, TokenString
 from token_analyzer.analyzer import AnalysisError, AnalysisResult, analyze, compare
-from token_analyzer.exceptions import UnsupportedModelError
+from token_analyzer.exceptions import UnsupportedModelError, TokenizerLoadError
 
 
 class FakeAdapter(TokenizerAdapter):
@@ -20,6 +20,10 @@ class FakeAdapter(TokenizerAdapter):
     returns one fabricated token ID per word. No real tokenization logic
     -- exists purely so analyze()'s math can be checked against known,
     hand-computable inputs."""
+
+    @property
+    def version(self) -> str:
+        return "fake-1.0"
 
     def encode(self, text: str) -> list[int]:
         if not isinstance(text, str):
@@ -122,3 +126,19 @@ def test_compare_isolates_failures_without_aborting(monkeypatch):
     assert isinstance(results["good-model"], AnalysisResult)
     assert isinstance(results["bad-model"], AnalysisError)
     assert "bad-model" in results["bad-model"].error
+
+def test_compare_isolates_tokenizer_load_error(monkeypatch):
+    def fake_get_adapter(model_name):
+        if model_name == "broken-model":
+            raise TokenizerLoadError("simulated load failure")
+        return FakeAdapter()
+
+    monkeypatch.setattr(
+        "token_analyzer.analyzer.get_adapter",
+        fake_get_adapter,
+    )
+
+    results = compare("hello world", ["broken-model", "working-model"])
+
+    assert isinstance(results["broken-model"], AnalysisError)
+    assert isinstance(results["working-model"], AnalysisResult)

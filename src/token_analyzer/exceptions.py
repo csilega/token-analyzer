@@ -21,3 +21,6 @@ class UnsupportedModelError(TokenAnalyzerError):
             f"No adapter registered for model '{model_name}'. "
             f"See registry.SUPPORTED_MODELS for the current list."
         )
+
+class TokenizerLoadError(TokenAnalyzerError):
+    pass

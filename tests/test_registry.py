@@ -12,7 +12,7 @@ import pytest
 
 from token_analyzer.adapters.huggingface_adapter import HuggingFaceAdapter
 from token_analyzer.adapters.tiktoken_adapter import TiktokenAdapter
-from token_analyzer.exceptions import UnsupportedModelError
+from token_analyzer.exceptions import UnsupportedModelError, TokenizerLoadError
 from token_analyzer.registry import SUPPORTED_MODELS, get_adapter
 
 
@@ -94,3 +94,15 @@ def test_supported_models_is_frozenset():
     # which would let calling code mutate the registry's source of truth.
     assert isinstance(SUPPORTED_MODELS, frozenset)
     assert "gpt-4" in SUPPORTED_MODELS
+
+def test_get_adapter_raises_tokenizer_load_error_on_network_failure(monkeypatch):
+    def raise_network_error(model_name):
+        raise ConnectionError("simulated network failure")
+
+    monkeypatch.setattr(
+        "token_analyzer.registry.tiktoken.encoding_for_model",
+        raise_network_error,
+    )
+
+    with pytest.raises(TokenizerLoadError):
+        get_adapter("gpt-4")
