@@ -41,3 +41,10 @@ class TiktokenAdapter(TokenizerAdapter):
                 # No correct standalone string exists for it.
                 result.append(TokenString(token_id=token_id, text=None))
         return result
+
+    @property
+    def version(self) -> str:
+        # Safe: tiktoken's vocab/merge data is bundled in the installed
+        # package, not fetched remotely — the package version and the
+        # actual data in use are always in lockstep.
+        return f"tiktoken-{tiktoken.__version__}"

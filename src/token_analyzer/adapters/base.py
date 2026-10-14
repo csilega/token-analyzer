@@ -75,3 +75,11 @@ class TokenizerAdapter(ABC):
         tokens have no valid standalone string (see TokenString.text).
         """
         raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def version(self) -> str:
+        """A string that changes if and only if this adapter's actual
+        tokenization output could change. Each backend earns this
+        differently — see the concrete adapters."""
+        raise NotImplementedError

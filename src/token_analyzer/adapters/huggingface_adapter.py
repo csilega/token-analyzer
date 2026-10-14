@@ -1,7 +1,7 @@
 """
 HuggingFace `tokenizers`-backed implementation of TokenizerAdapter.
 """
-
+import hashlib
 from tokenizers import Tokenizer
 
 from token_analyzer.adapters.base import TokenizerAdapter, TokenString
@@ -40,10 +40,20 @@ class HuggingFaceAdapter(TokenizerAdapter):
             # by comparing against a strict UTF-8 decode of the token's
             # own byte representation where available.
             single = self._tokenizer.decode([token_id])
-            if "\ufffd" in single and single.strip("\ufffd") == "":
+            if "\ufffd" in single:
                 # Entire decode is placeholder characters: this token has
                 # no standalone valid string.
                 result.append(TokenString(token_id=token_id, text=None))
             else:
                 result.append(TokenString(token_id=token_id, text=single))
         return result
+
+    @property
+    def version(self) -> str:
+        # NOT tokenizers.__version__ — that tracks the installed package,
+        # not the actual downloaded tokenizer.json content, which can
+        # drift on the Hub independently of any local package version.
+        # Hash the adapter's own loaded state instead, so this changes
+        # if and only if the real vocab/merges actually changed.
+        serialized = self._tokenizer.to_str()
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:16]
