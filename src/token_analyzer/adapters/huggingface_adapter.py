@@ -41,8 +41,12 @@ class HuggingFaceAdapter(TokenizerAdapter):
             # own byte representation where available.
             single = self._tokenizer.decode([token_id])
             if "\ufffd" in single:
-                # Entire decode is placeholder characters: this token has
-                # no standalone valid string.
+                # ANY replacement character means this token's bytes aren't
+                # valid UTF-8 on their own -> honest None. Deliberately NOT
+                # "entirely replacement chars" (see the Session 7 regression:
+                # that let "\ufffda\ufffd" through as fabricated text). A real
+                # U+FFFD in user input also lands here; an over-cautious None
+                # is preferred to a possibly-fabricated string.
                 result.append(TokenString(token_id=token_id, text=None))
             else:
                 result.append(TokenString(token_id=token_id, text=single))

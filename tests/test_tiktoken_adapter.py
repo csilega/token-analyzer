@@ -90,6 +90,10 @@ class TestTiktokenAdapterWithToyEncoding:
         result = toy_adapter.get_token_strings("hi")
         assert all(ts.text is not None for ts in result)
 
+    def test_version_tracks_installed_tiktoken_version(self, monkeypatch, toy_adapter):
+        monkeypatch.setattr(tiktoken, "__version__", "0.0.0-simulated-release")
+        assert toy_adapter.version == "tiktoken-0.0.0-simulated-release"
+
 
 def _cl100k_base_is_reachable() -> bool:
     try:

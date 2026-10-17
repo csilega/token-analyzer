@@ -6,3 +6,8 @@ scratch_response.py
 scratch_script.py
 venv/
 .venv/
+# Coverage / test tooling artifacts
+.coverage
+.coverage.*
+htmlcov/
+.hypothesis/

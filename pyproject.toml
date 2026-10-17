@@ -12,5 +12,30 @@ dependencies = [
     "prometheus_client>=0.20.0",
 ]
 
+# test-only tools. Installed with: pip install -e ".[dev]"
+# Kept out of runtime dependencies so the production image never ships them.
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# lets a bare `pytest` find both suites, so CI doesn't need to spell out paths.
+[tool.pytest.ini_options]
+testpaths = ["tests", "api/tests"]
+
+[tool.coverage.run]
+source = ["src/token_analyzer", "api/app"]
+branch = true
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 95
+exclude_also = [
+    "@abstractmethod",   # excludes the whole decorated method: it can never execute
+]

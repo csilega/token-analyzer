@@ -111,9 +111,15 @@ async def unsupported_model_handler(request: Request, exc: UnsupportedModelError
 @app.exception_handler(TokenAnalyzerError)
 async def token_analyzer_error_handler(request: Request, exc: TokenAnalyzerError):
     if isinstance(exc, TokenizerLoadError):
-        return JSONResponse(status_code=500, content={"error": "tokenizer_load_failed", "detail": str(exc)})
-    return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
-
+        logger.error("Tokenizer backend failed to load", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "tokenizer_load_failed",
+                     "detail": "Tokenizer backend is temporarily unavailable. Retry later."},
+        )
+    logger.error("Unhandled TokenAnalyzerError", exc_info=exc)
+    return JSONResponse(status_code=500, content={"error": "internal_error",
+                                                  "detail": "Internal error."})
 
 # --- Helpers -------------------------------------------------------------
 def _to_success_response(result) -> AnalyzeSuccessResponse:

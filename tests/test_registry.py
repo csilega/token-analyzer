@@ -106,3 +106,13 @@ def test_get_adapter_raises_tokenizer_load_error_on_network_failure(monkeypatch)
 
     with pytest.raises(TokenizerLoadError):
         get_adapter("gpt-4")
+
+def test_huggingface_cold_load_failure_raises_tokenizer_load_error(monkeypatch):
+    class _HubDown:
+        @staticmethod
+        def from_pretrained(*args, **kwargs):
+            raise ConnectionError("simulated: HuggingFace Hub unreachable")
+
+    monkeypatch.setattr("token_analyzer.registry.Tokenizer", _HubDown)
+    with pytest.raises(TokenizerLoadError):
+        get_adapter("gpt2")
