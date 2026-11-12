@@ -1,4 +1,4 @@
-from locust import HttpUser, task, constant
+from locust import HttpUser, constant, task
 
 
 class RateLimitProbeUser(HttpUser):

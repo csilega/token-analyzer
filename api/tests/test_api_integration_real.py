@@ -14,6 +14,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
+pytestmark = pytest.mark.real_tokenizer
 
 @pytest.fixture
 def client():
@@ -47,14 +48,6 @@ def test_analyze_success_returns_200_and_correct_shape(client):
     assert body["char_count"] == len("hello world")
     # Real cost table lookup (Milestone 3) -- gpt-4 has known pricing.
     assert body["estimated_cost_usd"] is not None
-
-
-def test_analyze_model_with_no_pricing_returns_null_cost(client):
-    # If your SUPPORTED_MODELS includes a model absent from
-    # _COST_PER_1K_TOKENS_USD, swap the model name below to match it --
-    # this proves the `float | None` contract actually round-trips as
-    # JSON `null`, not a crash or a fabricated 0.0.
-    pytest.skip("Set a real model name with no cost-table entry, if one exists")
 
 
 def test_analyze_unsupported_model_returns_404(client):

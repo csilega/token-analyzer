@@ -12,14 +12,20 @@ import logging
 import uuid
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from prometheus_client import make_asgi_app
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from token_analyzer.analyzer import analyze, compare
+from api.app.health import router as health_router
 from token_analyzer.analyzer import AnalysisError as LibAnalysisError
+from token_analyzer.analyzer import analyze, compare
+from token_analyzer.caching import (  # swap for RedisCacheBackend when ready
+    InMemoryCacheBackend,
+    analyze_cached,
+)
 from token_analyzer.exceptions import TokenAnalyzerError, TokenizerLoadError, UnsupportedModelError
 
 from .config import settings
@@ -32,14 +38,8 @@ from .schemas import (
     CompareRequest,
     CompareResponse,
     TokenStringResponse,
-    UnsupportedModelErrorResponse
+    UnsupportedModelErrorResponse,
 )
-
-from prometheus_client import make_asgi_app
-from token_analyzer.caching import InMemoryCacheBackend, analyze_cached  # swap for RedisCacheBackend when ready
-from api.app.health import router as health_router
-
-
 
 configure_logging()
 logger = logging.getLogger("token_analyzer.api")
@@ -48,13 +48,14 @@ logger = logging.getLogger("token_analyzer.api")
 app = FastAPI(title="Token Analyzer API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=settings.cors_origins,   
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-cache_backend = InMemoryCacheBackend()  # Ready to switch when needed: RedisCacheBackend(redis.Redis.from_url(settings.redis_url))
+# Ready to switch when needed: 
+# RedisCacheBackend(redis.Redis.from_url(settings.redis_url))
+cache_backend = InMemoryCacheBackend()  
 
 app.include_router(health_router)
 app.mount("/metrics", make_asgi_app())  # prometheus_client's built-in exposition endpoint

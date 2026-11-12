@@ -2,6 +2,7 @@
 HuggingFace `tokenizers`-backed implementation of TokenizerAdapter.
 """
 import hashlib
+
 from tokenizers import Tokenizer
 
 from token_analyzer.adapters.base import TokenizerAdapter, TokenString

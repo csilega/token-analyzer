@@ -17,6 +17,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
+import token_analyzer.analyzer as analyzer_module
 from token_analyzer.adapters.base import TokenString
 
 
@@ -142,3 +143,20 @@ def test_request_id_differs_across_requests(client):
     r1 = client.post("/analyze", json={"text": "hi", "model": "gpt-4"})
     r2 = client.post("/analyze", json={"text": "hi", "model": "gpt-4"})
     assert r1.headers["x-request-id"] != r2.headers["x-request-id"]
+
+
+def test_analyze_model_with_no_pricing_returns_null_cost(client, monkeypatch):
+    # Fake the condition: a supported model whose price is missing.
+    # monkeypatch restores the entry after this test, so other tests are unaffected.
+    monkeypatch.delitem(analyzer_module._COST_PER_1K_TOKENS_USD, "gpt-4")
+
+    response = client.post(
+        "/analyze",
+        # Unique text: avoids a cache hit from an earlier gpt-4 test (see below).
+        json={"text": "null-pricing contract check", "model": "gpt-4"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    # Must be present AND null -- not missing, and not a fabricated 0.0.
+    assert "estimated_cost_usd" in body
+    assert body["estimated_cost_usd"] is None

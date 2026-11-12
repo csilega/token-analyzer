@@ -16,11 +16,11 @@ Split into two clearly separated groups:
    now," not "our code is broken."
 """
 
-import tiktoken
 import pytest
+import tiktoken
 
-from token_analyzer.adapters.tiktoken_adapter import TiktokenAdapter
 from token_analyzer.adapters.base import TokenString
+from token_analyzer.adapters.tiktoken_adapter import TiktokenAdapter
 
 
 def _build_toy_encoding() -> tiktoken.Encoding:
@@ -103,11 +103,7 @@ def _cl100k_base_is_reachable() -> bool:
         return False
 
 
-@pytest.mark.skipif(
-    not _cl100k_base_is_reachable(),
-    reason="cl100k_base not reachable (no network or host unavailable) -- "
-    "skipping integration test, not treating as a code failure.",
-)
+@pytest.mark.real_tokenizer
 def test_real_cl100k_base_handles_emoji_split():
     """
     Integration test: confirms our adapter's None-detection logic behaves

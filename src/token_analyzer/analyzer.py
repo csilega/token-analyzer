@@ -9,7 +9,7 @@ compare(text, model_names) -> dict[str, AnalysisResult | AnalysisError]
 from dataclasses import dataclass
 
 from token_analyzer.adapters.base import TokenString
-from token_analyzer.exceptions import TokenAnalyzerError, UnsupportedModelError
+from token_analyzer.exceptions import TokenAnalyzerError
 from token_analyzer.registry import get_adapter
 
 # USD per 1,000 tokens. Placeholder figures -- pricing changes over time

@@ -12,7 +12,7 @@ import pytest
 
 from token_analyzer.adapters.huggingface_adapter import HuggingFaceAdapter
 from token_analyzer.adapters.tiktoken_adapter import TiktokenAdapter
-from token_analyzer.exceptions import UnsupportedModelError, TokenizerLoadError
+from token_analyzer.exceptions import TokenizerLoadError, UnsupportedModelError
 from token_analyzer.registry import SUPPORTED_MODELS, get_adapter
 
 
