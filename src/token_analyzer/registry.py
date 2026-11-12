@@ -12,7 +12,7 @@ from tokenizers import Tokenizer
 from token_analyzer.adapters.base import TokenizerAdapter
 from token_analyzer.adapters.huggingface_adapter import HuggingFaceAdapter
 from token_analyzer.adapters.tiktoken_adapter import TiktokenAdapter
-from token_analyzer.exceptions import UnsupportedModelError, TokenizerLoadError
+from token_analyzer.exceptions import TokenizerLoadError, UnsupportedModelError
 
 # Models we know how to build a tiktoken-backed adapter for.
 # Extend this as support grows

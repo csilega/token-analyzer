@@ -68,7 +68,7 @@ def analyze_cached(
         return result
 
     CACHE_MISS_COUNT.labels(model_name=model_name).inc()
-    result = analyze_fn(text, model_name)  # registry lookup + adapter call happen here, only on a miss
+    result = analyze_fn(text, model_name)  # registry + adapter run only on a miss
     backend.set(key, dataclasses.asdict(result), ttl_seconds=ttl_seconds)
     ANALYZE_LATENCY_SECONDS.labels(model_name=model_name, cache_result="miss").observe(
         time.perf_counter() - start

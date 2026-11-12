@@ -2,17 +2,16 @@
 Proves the broad TokenAnalyzerError handler returns a structured 500 for a
 tokenizer cold-load failure, WITHOUT leaking internal error details.
 """
-import pytest
-import tiktoken
 import asyncio
 import json
+
+import pytest
+import tiktoken
 from fastapi.testclient import TestClient
 
-from api.app.main import app, limiter
-from token_analyzer.registry import get_adapter
-from api.app.main import token_analyzer_error_handler
+from api.app.main import app, limiter, token_analyzer_error_handler
 from token_analyzer.exceptions import TokenAnalyzerError
-
+from token_analyzer.registry import get_adapter
 
 INTERNAL_DETAIL = "simulated: secret-internal-host.example unreachable"
 

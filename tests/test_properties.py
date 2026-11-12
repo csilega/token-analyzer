@@ -8,7 +8,8 @@ cleanly when the encoding can't be fetched (same pattern as
 test_tiktoken_adapter.py).
 """
 import pytest
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from token_analyzer.registry import get_adapter
 
@@ -22,15 +23,15 @@ def _cl100k_available() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(
-    not _cl100k_available(), reason="cl100k_base not reachable"
-)
+pytestmark = pytest.mark.real_tokenizer
 
 # conftest.py's autouse fixture (lru_cache reset) is function-scoped, so it runs
 # once per test, not once per generated example. That's harmless here, but
 # Hypothesis warns about it by default, so we acknowledge it explicitly.
 PROPERTY_SETTINGS = settings(
     max_examples=200,
+    deadline=None,  # correctness test: timing is measured by load tests, not here.
+                    # The first example absorbs adapter cold-start and would flake.
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 

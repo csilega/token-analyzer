@@ -1,0 +1,21 @@
+# Never ship: secrets and history
+.git
+.env
+.env.*
+!.env.example
+
+# Wrong platform, or regenerated anyway
+.venv
+venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.hypothesis
+.coverage
+htmlcov
+
+# Not part of the backend image
+frontend/
+load_tests/
+tests/
+api/tests/

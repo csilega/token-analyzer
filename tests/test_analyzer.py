@@ -12,7 +12,7 @@ import pytest
 
 from token_analyzer.adapters.base import TokenizerAdapter, TokenString
 from token_analyzer.analyzer import AnalysisError, AnalysisResult, analyze, compare
-from token_analyzer.exceptions import UnsupportedModelError, TokenizerLoadError
+from token_analyzer.exceptions import TokenizerLoadError, UnsupportedModelError
 
 
 class FakeAdapter(TokenizerAdapter):
